@@ -15,6 +15,27 @@ from dotenv import load_dotenv
 # 加载环境变量
 load_dotenv()
 
+def download_image(url: str, save_path: str) -> bool:
+    """下载图片并保存到指定路径
+    
+    Args:
+        url (str): 图片URL
+        save_path (str): 保存路径
+        
+    Returns:
+        bool: 是否成功下载并保存
+    """
+    try:
+        response = requests.get(url, verify=False)
+        if response.status_code == 200:
+            with open(save_path, 'wb') as f:
+                f.write(response.content)
+            return True
+        return False
+    except Exception as e:
+        print(f"⚠️ 下载图片失败: {str(e)}")
+        return False
+
 class ContentOrganizer:
     def __init__(self):
         # 配置 OpenRouter API
@@ -173,13 +194,19 @@ class ContentOrganizer:
                             - 逻辑递进清晰，从问题开始，逐步深入
 
                             Markdown格式要求：
+                            - 第一行为书名
+                            - 第二行为章节名
                             - 大标题突出主题，吸引眼球，最好使用疑问句
                             - 小标题简洁有力，结构清晰，尽量使用单词或短语
                             - 直入主题，在第一部分清晰阐述问题和需求
                             - 正文使用自然段，避免使用列表形式
                             - 内容翔实，避免过度简略，特别注意保留原文中的数据和示例信息
                             - 如有来源URL，使用文内链接形式
-                            - 保留原文中的Markdown格式图片链接"""
+                            - 保留原文中的Markdown格式图片链接
+                            
+                            文件描述
+                            - 上传的文件格式为：第一行书名、第二行章节名、剩下为章节内容
+                            """
 
         try:
             response = requests.post(
@@ -324,13 +351,19 @@ class ContentOrganizer:
   * 重点内容加粗突出
   * 适当空行增加可读性
   * 步骤说明要清晰
+- 结尾：
+  * 结尾必须写明：以上信息来自于书名
 
 3. 标签优化：
-- 提取4类标签（每类1-2个）：
+- 提取4类标签（除前三个标签外，每类1-2个）：
+  * 前三个标签为：#阅读、#书名、#打卡
   * 核心关键词：主题相关
   * 关联关键词：长尾词
   * 高转化词：购买意向强
-  * 热搜词：行业热点"""
+        
+4. 文件描述
+- 上传的文件格式为：第一行书名、第二行章节名、剩下为章节内容
+"""
 
         try:
             response = requests.post(
@@ -390,11 +423,12 @@ class ContentOrganizer:
         
         Args:
             input_file (str): 输入的markdown文件路径
-            output_dir (str): 输出目录
+            output_dir (str): 输出目录路径（现在仅作为后备路径使用）
         """
         try:
-            # 创建输出目录
-            os.makedirs(output_dir, exist_ok=True)
+            # 获取输入文件的目录作为输出目录
+            input_path = Path(input_file)
+            file_dir = input_path.parent
             
             # 读取markdown文件
             print(f"📝 正在读取Markdown文件: {input_file}")
@@ -409,7 +443,7 @@ class ContentOrganizer:
             organized_content = self.organize_content(content)
             
             # 保存整理后的内容
-            organized_file = os.path.join(output_dir, f"{timestamp}_organized.md")
+            organized_file = os.path.join(file_dir, f"{timestamp}_organized.md")
             with open(organized_file, 'w', encoding='utf-8') as f:
                 f.write(organized_content)
             print(f"✅ 整理后的内容已保存至: {organized_file}")
@@ -420,15 +454,27 @@ class ContentOrganizer:
                 xiaohongshu_content, titles, tags, images = self.convert_to_xiaohongshu(organized_content)
                 
                 # 保存小红书版本
-                xiaohongshu_file = os.path.join(output_dir, f"{timestamp}_xiaohongshu.md")
+                xiaohongshu_file = os.path.join(file_dir, f"{timestamp}_xiaohongshu.md")
+                
+                # 下载并保存图片
+                saved_images = []
+                for i, image_url in enumerate(images, 1):
+                    image_filename = f"图{i}.png"
+                    image_path = os.path.join(file_dir, image_filename)
+                    if download_image(image_url, image_path):
+                        saved_images.append(image_filename)
+                        print(f"✅ 已保存图片: {image_filename}")
+                    else:
+                        print(f"⚠️ 保存图片失败: {image_filename}")
+                
                 with open(xiaohongshu_file, "w", encoding="utf-8") as f:
                     # 写入标题
                     if titles:
                         f.write(f"# {titles[0]}\n\n")
                     
                     # 如果有图片，先写入第一张作为封面
-                    if images:
-                        f.write(f"![封面图]({images[0]})\n\n")
+                    if saved_images:
+                        f.write(f"![封面图]({saved_images[0]})\n\n")
                     
                     # 写入正文内容的前半部分
                     content_parts = xiaohongshu_content.split('\n\n')
@@ -439,15 +485,15 @@ class ContentOrganizer:
                     f.write('\n\n')
                     
                     # 如果有第二张图片，插入到中间
-                    if len(images) > 1:
-                        f.write(f"![配图]({images[1]})\n\n")
+                    if len(saved_images) > 1:
+                        f.write(f"![配图]({saved_images[1]})\n\n")
                     
                     # 写入后半部分
                     f.write('\n\n'.join(content_parts[mid_point:]))
                     
                     # 如果有第三张图片，插入到末尾
-                    if len(images) > 2:
-                        f.write(f"\n\n![配图]({images[2]})")
+                    if len(saved_images) > 2:
+                        f.write(f"\n\n![配图]({saved_images[2]})")
                     
                     # 写入标签
                     if tags:
@@ -479,7 +525,7 @@ def main():
         print("⚠️ 输入文件必须是Markdown文件(.md)")
         sys.exit(1)
     
-    # 创建ContentOrganizer实例并处理文��
+    # 创建ContentOrganizer实例并处理文件
     organizer = ContentOrganizer()
     organizer.process_markdown_file(args.input, args.output)
 
