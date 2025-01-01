@@ -352,7 +352,7 @@ class ContentOrganizer:
   * 适当空行增加可读性
   * 步骤说明要清晰
 - 结尾：
-  * 结尾必须写明：以上信息来自于书名
+  * 结尾必须写明：以上信息来自于《书名》
 
 3. 标签优化：
 - 提取4类标签（除前三个标签外，每类1-2个）：
@@ -360,7 +360,7 @@ class ContentOrganizer:
   * 核心关键词：主题相关
   * 关联关键词：长尾词
   * 高转化词：购买意向强
-        
+
 4. 文件描述
 - 上传的文件格式为：第一行书名、第二行章节名、剩下为章节内容
 """
@@ -394,13 +394,31 @@ class ContentOrganizer:
                             titles = [line]
                             break
                     
-                    tags = re.findall(r'#([^\s#]+)', xiaohongshu_content)
+                    # 获取关键词
+                    keyword_response = requests.post(
+                        url=self.api_url,
+                        headers=self.headers,
+                        json={
+                            "model": self.AI_MODEL,
+                            "messages": [
+                                {"role": "system", "content": "你是一名总结专家，擅长将复杂的内容总结为简洁明了的几个关键词。需要返回一个列表，列表的结构为“关键词：词频”，列表按照按照词频降序排序。"},
+                                {"role": "user", "content": f"请将以下内容总结为简洁明了的内容：{content}"}
+                            ],
+                            "temperature": 0.3,
+                            "max_tokens": 50
+                        }
+                    )
                     
+                    keywords = []
+                    if keyword_response.status_code == 200:
+                        keyword_result = keyword_response.json()
+                        if keyword_result.get('choices'):
+                            keywords = [kw.strip() for kw in keyword_result['choices'][0]['message']['content'].strip().split(',')][:4]
+
                     # 获取相关图片
                     images = []
-                    if self.unsplash_client:
-                        search_terms = titles + tags[:2] if tags else titles
-                        search_query = ' '.join(search_terms)
+                    if self.unsplash_client and keywords:
+                        search_query = ' '.join(keywords)
                         try:
                             images = self._get_unsplash_images(search_query, count=4)
                             if images:
@@ -410,7 +428,7 @@ class ContentOrganizer:
                         except Exception as e:
                             print(f"⚠️ 获取配图失败: {str(e)}")
                     
-                    return xiaohongshu_content, titles, tags, images
+                    return xiaohongshu_content, titles, keywords, images
                     
             return content, [], [], []
             
