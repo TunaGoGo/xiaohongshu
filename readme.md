@@ -1,4 +1,6 @@
 # Xiaohongshu Note Generator
+## Introduction
+This tool is to auto generate Social media Note used AI APIs
 
 ## Warnings
 1. Pls place own AI APIs in .env file
