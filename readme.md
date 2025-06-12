@@ -1,6 +1,6 @@
 # Xiaohongshu Note Generator
 
-##
+## Warnings
 1. Pls place own AI APIs in .env file
 
 ## Function
