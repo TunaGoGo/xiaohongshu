@@ -1,19 +1,19 @@
-# 小红书笔记生成器
+# Xiaohongshu Note Generator
 
-## 功能
+##
+1. Pls place own AI APIs in .env file
 
-1. 将markdown文件分割成章节
-2. 将章节内容转换成小红书笔记
+## Function
+1. Split the markdown file into chapters
+2. Convert the chapter content into Xiaohongshu notes
 
-## 使用方法
+## Usage
+1. Put the markdown file in the books directory
+2. Run break_down.py to split the markdown file into chapters
+3. Run xiaohongshu.py to convert the chapter content into Xiaohongshu notes
 
-1. 将markdown文件放在books目录下
-2. 运行break_down.py，将markdown文件分割成章节
-3. 运行xiaohongshu.py，将章节内容转换成小红书笔记
-
-## 注意事项
-
-1. 请确保网络畅通，否则可能会导致API请求失败
-2. 请确保输入的markdown文件格式正确，否则可能会导致分割失败
-3. 请确保输入的markdown文件内容完整，否则可能会导致笔记生成失败
-4. 请确保输入的markdown文件内容符合小红书笔记的格式要求，否则可能会导致笔记生成失败
+## Notes
+1. Please ensure that the network is unobstructed, otherwise the API request may fail
+2. Please ensure that the format of the input markdown file is correct, otherwise the segmentation may fail
+3. Please ensure that the content of the input markdown file is complete, otherwise the note generation may fail
+4. Please ensure that the content of the input markdown file meets the format requirements of Xiaohongshu notes, otherwise the note generation may fail
